@@ -1,4 +1,4 @@
-[Read this in English](README_PT.md)
+[Read this in Portuguese](README_PT.md)
 
 # Clean Metadata Script
 
