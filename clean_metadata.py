@@ -1,13 +1,13 @@
 import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from utils import benedictus_ascii_art
-import os
+from utils import benedictus_ascii_art, get_exiftool_path, get_file_paths, log_error, verified_folder
 from tqdm import tqdm
 
 
 def get_exiftool_config():
   return [
-    '-charset', 'filename=utf8',
+    '-charset', 
+    'filename=utf8',
     '-all=',
     '-q',
     '-overwrite_original',
@@ -20,35 +20,22 @@ def get_exiftool_config():
   ]
 
 
-def get_exiftool_path():
-  return os.path.join(os.path.dirname(__file__), 'bin', 'exiftool')
-
-
-def get_file_paths(folder_path):
-  file_paths = []
-  for root, dirs, files in os.walk(folder_path):
-    for file in files:
-      file_path = os.path.join(root, file)
-      file_paths.append(file_path)
-  return file_paths
-
-
 def clear_metadata(file_path):
-  subprocess.run([get_exiftool_path()] + get_exiftool_config() + [file_path], stderr=subprocess.DEVNULL)
+  process = subprocess.run([get_exiftool_path()] + get_exiftool_config() + [file_path], stderr=subprocess.PIPE)
+  if process.returncode != 0:
+    log_error(process.stderr.decode())
 
 
-def main(folder_path):
-  if os.path.isdir(folder_path):
+def main(folder_path): 
+  if verified_folder(folder_path):
     file_paths = get_file_paths(folder_path)
     with ThreadPoolExecutor(max_workers=5) as executor:
       futures = [executor.submit(clear_metadata, file_path) for file_path in file_paths]
-      for future in tqdm(as_completed(futures), total=len(file_paths), desc="Processing"):
+      for future in tqdm(as_completed(futures), total=len(file_paths), desc='Processing'):
         future.result()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   benedictus_ascii_art()
-  folder_path = input("Enter the folder path: ")
+  folder_path = input('Enter the folder path: ')
   main(folder_path)
-  print()
-  print(f'FINISHED SCRIPT')
